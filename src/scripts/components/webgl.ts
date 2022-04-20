@@ -15,18 +15,18 @@ export default class WebGL {
         scene: THREE.Scene;
         renderer: THREE.WebGLRenderer | null;
         clock: THREE.Clock;
-        redraw: any;
+        redraw: THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]> | null;
         camera: THREE.PerspectiveCamera | null;
         cameraFov: number;
         cameraAspect: number;
-        mixer: any;
-        animations: any;
+        mixer: THREE.AnimationMixer;
+        animations: THREE.AnimationClip[];
         deg: number;
-        particle: any;
-        particles: any;
-        particlesSlice: any;
+        particle: THREE.Mesh;
+        particles: THREE.Mesh| Array<T>;
+        particlesSlice: THREE.Group | Array<T>;
         framesCount: number;
-        localGroup: any;
+        localGroup: THREE.Group;
     };
     sp: boolean;
     ua: string;
@@ -196,10 +196,10 @@ export default class WebGL {
             this.three.particlesSlice[ix].rotation.z = this.three.deg * ((ix / length) * 180) * 6;
         }
     }
-    sceneGroup(group: THREE.Group, objs: any) {
+    sceneGroup(group: THREE.Group, objs: THREE.Mesh) {
         group = this.three.localGroup = new THREE.Group();
 
-        objs.forEach((obj: any) => {
+        objs.forEach((obj: THREE.Mesh) => {
             group.add(obj);
         });
 
@@ -244,7 +244,7 @@ export default class WebGL {
                 n.castShadow = true;
                 n.receiveShadow = true;
             });
-            this.three.redraw = data; // 3Dモデルをredrawに入れる
+            this.three.redraw = data;
             this.three.scene.add(data); // シーンに3Dモデルを追加
             this.three.redraw.rotation.set(0.3, 0.6, 0);
             this.three.redraw.scale.set(this.sp ? 0.8 : 2, this.sp ? 0.8 : 2, this.sp ? 0.8 : 2);
@@ -259,22 +259,16 @@ export default class WebGL {
 
         // Slice Animation
         for (let i = 0; i < this.three.particlesSlice.length; ++i) {
-            this.three.particlesSlice[i].rotation.x += 0.001 + 0.0002 * i; // each slice animation
-            this.three.particlesSlice[i].rotation.y += 0.0015 + 0.0001 * i; // each slice animation
-            this.three.particlesSlice[i].rotation.z += 0.002 + 0.0002 * i; // each slice animation
+            this.three.particlesSlice[i].rotation.x += 0.001 + 0.0002 * i;
+            this.three.particlesSlice[i].rotation.y += 0.0015 + 0.0001 * i;
+            this.three.particlesSlice[i].rotation.z += 0.002 + 0.0002 * i;
         }
 
-        // Single Particles Animation
         for (let i = 0; i < this.three.particles.length; ++i) {
-            // Scaling
             this.three.particles[i].scale.set(Math.sin(this.three.framesCount * 0.01 * i), Math.sin(this.three.framesCount * 0.01 * i), Math.sin(this.three.framesCount * 0.01 * i));
-
-            // Color
-            // Each dot will have the same color as they use the same material in the creation process!
             this.three.particles[i].material.color.setHSL(Math.sin(this.three.framesCount * 0.0075 + i * 0.001) * 0.5 + 0.5, 0.75, 0.75);
         }
 
-        // Sphere Animation
         this.three.localGroup.rotation.y = Math.cos(this.three.framesCount * 0.01);
         this.three.localGroup.rotation.z = Math.sin(this.three.framesCount * 0.02);
 
@@ -284,9 +278,8 @@ export default class WebGL {
         // レンダリングを実行
         requestAnimationFrame(this.rendering.bind(this));
         this.three.renderer.render(this.three.scene, this.three.camera);
-        // this.animate(); // アニメーション開始
     }
-    animate() {
+    animate():void {
         gsap.config({
             force3D: true,
         });
